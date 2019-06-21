@@ -69,33 +69,27 @@ namespace MESPrintService
             {
                 Encoding encoding = Encoding.UTF8;
 
-                //System.Text.Encoding  encoding = GetType(filePath); //Encoding.ASCII;//
-                // DataTable dt = new DataTable();
+            
 
                 System.IO.FileStream fs = new System.IO.FileStream(filePath, System.IO.FileMode.Open, System.IO.FileAccess.Read);
 
-                // System.IO.StreamReader sr = new System.IO.StreamReader(fs, encoding);
+            
                 System.IO.StreamReader sr = new System.IO.StreamReader(fs, System.Text.Encoding.UTF8);
 
-                //记录每次读取的一行记录
+   
 
                 string strLine = "";
 
-                //记录每行记录中的各字段内容
+    
 
                 string[] aryLine = null;
 
-                //string[] tableHead = null;
-
-                //标示列数
-
-                //  int columnCount = 0;
-
-                //标示是否是读取的第一行
+           
+ 
 
                 bool IsFirst = true;
 
-                //逐行读取CSV中的数据
+ 
 
                 while ((strLine = sr.ReadLine()) != null)
 
@@ -240,6 +234,37 @@ namespace MESPrintService
             return bolResult;
         }
 
+        public void MoveFileToErrorFolder(string errorFile, StreamWriter sw)
+        {
+
+
+            System.IO.FileInfo myFile = new System.IO.FileInfo(errorFile);
+
+
+            if (File.Exists(@"c:\CFMS\error\" + myFile.Name))
+            {
+                DeleteFile(@"c:\CFMS\error\" + myFile.Name);
+
+                myFile.MoveTo(@"c:\\cfms\\error\" + myFile.Name);
+
+
+                // DeleteFile(@"C:\CFMS\" + errorFile);
+                sw.WriteLine("Date: " + DateTime.Now.ToString());
+                sw.WriteLine("move to  error folder:" + errorFile);
+                sw.WriteLine("================move error file ======================");
+                sw.Flush();
+            }
+            else
+            {
+                myFile.MoveTo(@"c:\\cfms\\error\" + myFile.Name);
+            }
+            //sw.Close();
+
+
+
+
+
+        }
 
 
         internal void _MyTimerElapsed(object sender, ElapsedEventArgs e)
@@ -249,15 +274,15 @@ namespace MESPrintService
             List<string> myList = new List<string>();
             FileStream fs = new FileStream(logFileName, FileMode.Append, FileAccess.Write, FileShare.ReadWrite);
             StreamWriter sw = new StreamWriter(fs);
-
-
+                List<string> FileName = new List<string>();
+                List<string> FileSingleName = new List<string>();
+            int j = 0;
             try
             {
  
                 DirectoryInfo folder = new DirectoryInfo(@"c:\brother");
  
-                List<string> FileName = new List<string>();
-                List<string> FileSingleName = new List<string>();
+              
 
                 foreach (FileInfo file in folder.GetFiles("Label*.txt"))
                 {
@@ -273,7 +298,7 @@ namespace MESPrintService
               
                 //        foreach (FileInfo file in folder.GetFiles("Label*.txt"))
 
-                for (int j=0;j<=FileName.Count-1;j++)
+                for (  j=0;j<=FileName.Count-1;j++)
                 {
     
                                                                              //-----
@@ -287,8 +312,11 @@ namespace MESPrintService
 
                     if (myList is null)
                     {
+                        MoveFileToErrorFolder(FileName[j],sw);
                         sw.WriteLine("  没有数据打印, 或者打印参数不对!");
                         sw.Flush();
+                        sw.Close();
+                        return;
                     }
                     else
                     {
@@ -319,14 +347,15 @@ namespace MESPrintService
 
                         if (!txt.Contains(myList[0]))
                         {
-                             
-                            sw.WriteLine("------------------------------------------error--------------------------------");
+
+                            MoveFileToErrorFolder(FileName[j], sw);
+                            sw.WriteLine("---------------------------------------error------------------------------------");
                             sw.WriteLine("------------参数不对,没有相应标签模板:"+ myList[0] +" 不打印------------ - " );
                             sw.WriteLine("-----------------------------------error---------------------------------------");
                             sw.Flush();
                             sw.Close();
-                          moveFile(@"c:\brother\error\", FileSingleName[0], sw);
-
+                            //   moveFile(@"c:\brother\error\", FileSingleName[0], sw);
+                            return;
                             
                         }
                        
@@ -749,25 +778,49 @@ namespace MESPrintService
                         }
 
 
-                        sw.WriteLine("------------以上为一次打印记录-------------");
+            
+
+
+
+                        //  Random random = new Random();
+                        //  string  NewFile;
+
+                        ////  OrignFile = @"c:\brother";
+                        //  NewFile = "c:\\brother\\backup\\Label" + DateTime.Now.ToString("yyyyMMddhhmmss-") + random.Next().ToString() + ".txt";
+                        //  //    NewFile = "c:\\brother\\backup\\Label" + file.FullName + "-" +random.Next().ToString() + ".txt";
+                        //  File.Copy(file.FullName, NewFile, true);
+
+                        //  if (File.Exists(FileName[j]))
+                        //  DeleteFile(FileName[j]);
+
+
+                        System.IO.FileInfo myFile = new System.IO.FileInfo(FileName[j]);
+
+
+                        if (File.Exists(@"c:\CFMS\backup\" + myFile.Name))
+                        {
+                            DeleteFile(@"c:\CFMS\backup\" + myFile.Name);
+
+                            myFile.MoveTo(@"c:\\cfms\\backup\" + myFile.Name);
+
+
+                            // DeleteFile(@"C:\CFMS\" + errorFile);
+                            sw.WriteLine("Date: " + DateTime.Now.ToString());
+                            sw.WriteLine("Move to  backup folder:" + FileSingleName[j]);
+                            sw.WriteLine("========move to backup folde=========");
+                            sw.Flush();
+                        }
+                        else
+                        {
+                            myFile.MoveTo(@"c:\\cfms\\backup\" + myFile.Name);
+                        }
+                         
+
+                        sw.WriteLine("-------------------------------------以上为一次打印记录---------------------------------------");
                         sw.Flush();
                         sw.Close();
                         myList.Clear();
 
-      
-
-                        Random random = new Random();
-                        string  NewFile;
-
-                      //  OrignFile = @"c:\brother";
-                        NewFile = "c:\\brother\\backup\\Label" + DateTime.Now.ToString("yyyyMMddhhmmss-") + random.Next().ToString() + ".txt";
-                        //    NewFile = "c:\\brother\\backup\\Label" + file.FullName + "-" +random.Next().ToString() + ".txt";
-                        File.Copy(file.FullName, NewFile, true);
-
-                        if (File.Exists(FileName[j]))
-                        DeleteFile(FileName[j]);
-
-                        
 
 
                     }
@@ -779,8 +832,10 @@ namespace MESPrintService
                 //  ex.ToString()
 
                 sw.WriteLine("------------Program error-------------");
+                sw.WriteLine("-------File move to error folder-------");
+                MoveFileToErrorFolder(FileName[j],sw);
                 sw.WriteLine(ex.ToString());
-                sw.WriteLine("------------Print error log-------------");
+                sw.WriteLine("----------------------------------------Print error log------------------------------------------------");
 
                 sw.Flush();
                 sw.Close();
